@@ -1,0 +1,78 @@
+syntax = "proto3";
+
+package menu;
+option go_package = "restaurant-menu/proto";
+
+// ----- Messages -----
+
+message RestaurantInfo {
+  string name = 1;
+  string address = 2;
+  string phone = 3;
+}
+
+message Category {
+  int32 id = 1;
+  string name = 2;
+  int32 order = 3;
+}
+
+message Dish {
+  int32 id = 1;
+  string name = 2;
+  string description = 3;
+  double price = 4;
+  bool is_available = 5;
+  int32 category_id = 6;
+}
+
+message Empty {}
+
+// ----- Service Definition -----
+
+service MenuService {
+  // Public-facing RPCs
+  rpc GetFullMenu(Empty) returns (FullMenuResponse);
+  
+  // Admin RPCs
+  rpc GetRestaurantInfo(Empty) returns (RestaurantInfo);
+  rpc UpdateRestaurantInfo(RestaurantInfo) returns (RestaurantInfo);
+  
+  rpc CreateCategory(Category) returns (Category);
+  rpc ListCategories(Empty) returns (ListCategoriesResponse);
+  rpc UpdateCategory(Category) returns (Category);
+  rpc DeleteCategory(CategoryID) returns (Empty);
+  
+  rpc CreateDish(Dish) returns (Dish);
+  rpc ListDishesByCategory(CategoryID) returns (ListDishesResponse);
+  rpc UpdateDish(Dish) returns (Dish);
+  rpc DeleteDish(DishID) returns (Empty);
+}
+
+// ----- Helper Messages for Responses -----
+
+message FullMenuResponse {
+    RestaurantInfo restaurant_info = 1;
+    repeated CategoryWithDishes categories = 2;
+}
+
+message CategoryWithDishes {
+    Category category_info = 1;
+    repeated Dish dishes = 2;
+}
+
+message ListCategoriesResponse {
+  repeated Category categories = 1;
+}
+
+message ListDishesResponse {
+  repeated Dish dishes = 1;
+}
+
+message CategoryID {
+  int32 id = 1;
+}
+
+message DishID {
+  int32 id = 1;
+}
