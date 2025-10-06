@@ -6,7 +6,7 @@ import {
   Dish as ProtoDish,
   CategoryID,
   DishID,
-} from '../proto/menu_pb';
+} from '../proto';
 import menuClient from '../services/menuClient';
 
 interface RestaurantInfo {

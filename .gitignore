@@ -32,9 +32,9 @@ yarn-error.log*
 *.swo
 *~
 
-# Generated protobuf files
-/backend/proto/*.pb.go
-/frontend/src/proto/
+# Generated protobuf files (keep them in repo for deployment)
+# /backend/proto/*.pb.go
+# /frontend/src/proto/
 
 # Envoy proxy
 /proxy/envoy

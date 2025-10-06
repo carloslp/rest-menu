@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Empty } from '../proto/menu_pb';
+import { Empty } from '../proto';
 import menuClient from '../services/menuClient';
 
 interface RestaurantInfo {

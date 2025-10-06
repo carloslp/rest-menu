@@ -1,149 +1,181 @@
-# Restaurant Menu Management System
+Protocol Buffers - Google's data interchange format
+===================================================
 
-A full-stack web application for managing and displaying restaurant menus. Built with Go backend, React frontend, and gRPC/gRPC-Web for communication.
+Copyright 2008 Google Inc.
 
-## Features
+This directory contains the JavaScript Protocol Buffers runtime library.
 
-- **Public Menu Page**: Customer-facing page displaying the complete menu organized by categories
-- **Admin Dashboard**: Full CRUD operations for managing restaurant information, categories, and dishes
-- **Modern Tech Stack**: Go + gRPC backend, React + TypeScript frontend
-- **RESTful API**: gRPC-based API with Web support via Envoy proxy
-- **Responsive UI**: Clean, modern interface built with Tailwind CSS
+The library is currently compatible with:
 
-## Tech Stack
+1. CommonJS-style imports (eg. `var protos = require('my-protos');`)
+2. Closure-style imports (eg. `goog.require('my.package.MyProto');`)
 
-- **Backend**: Go 1.24+, gRPC, GORM, SQLite
-- **Frontend**: React 18, TypeScript, gRPC-Web, Tailwind CSS
-- **Proxy**: Envoy for gRPC-Web translation
-- **Database**: SQLite
+Support for ES6-style imports is not implemented yet.  Browsers can
+be supported by using Browserify, webpack, Closure Compiler, etc. to
+resolve imports at compile time.
 
-## Project Structure
+To use Protocol Buffers with JavaScript, you need two main components:
 
-```
-/restaurant-menu
-├── /backend         # Go server application
-│   ├── /database    # Database initialization and seeding
-│   ├── /models      # GORM models
-│   ├── /proto       # Generated protobuf Go code
-│   ├── /service     # gRPC service implementation
-│   └── main.go      # Server entry point
-├── /frontend        # React client application
-│   ├── /src
-│   │   ├── /pages   # Public menu and admin panel
-│   │   ├── /proto   # Generated protobuf TypeScript code
-│   │   └── /services # gRPC client
-│   └── Dockerfile
-├── /proto           # .proto files for gRPC definitions
-└── /proxy           # Envoy proxy configuration
-```
+1. The protobuf runtime library.  You can install this with
+   `npm install google-protobuf`, or use the files in this directory.
+    If npm is not being used, as of 3.3.0, the files needed are located in binary subdirectory;
+    arith.js, constants.js, decoder.js, encoder.js, map.js, message.js, reader.js, utils.js, writer.js
+2. The Protocol Compiler `protoc`.  This translates `.proto` files
+   into `.js` files.  The compiler is not currently available via
+   npm, but you can download a pre-built binary
+   [on GitHub](https://github.com/protocolbuffers/protobuf/releases)
+   (look for the `protoc-*.zip` files under **Downloads**).
 
-## Quick Start
 
-### Prerequisites
+Project Status as of September 2022
+===
 
-- Go 1.24 or later
-- Node.js 20 or later
-- Protocol Buffers compiler (`protoc`)
-- Docker and Docker Compose (for containerized deployment)
+This project is currently in a somewhat broken state that we are working to rectify. We expect to have updated releases by the end of September 2022.
 
-### Running with Docker Compose (Recommended)
+**Support Status**
 
-1. Clone the repository:
-```bash
-git clone https://github.com/carloslp/rest-menu.git
-cd rest-menu
-```
+Protobuf JavaScript is widely used and well maintained internally at Google but does not currently have staffing for more than minimal support for this open source project.
 
-2. Build and start all services:
-```bash
-docker-compose up --build
-```
+**Contributing**
 
-3. Access the application:
-   - Public Menu: http://localhost:3000
-   - Admin Panel: http://localhost:3000/admin
-   - Envoy Admin: http://localhost:9901
+Contributions should preserve existing behavior where possible.  Current customers rely on applications continuing to work across minor version upgrades.
 
-### Running Locally (Development)
+We also currently have limited staffing for this project, as such we encourage small targeted contributions.  Thanks!
 
-#### 1. Start the Backend
+Setup
+=====
 
-```bash
-cd backend
-go mod download
-go build -o server
-./server
-```
+First, obtain the Protocol Compiler.  The easiest way is to download
+a pre-built binary from [https://github.com/protocolbuffers/protobuf/releases](https://github.com/protocolbuffers/protobuf/releases).
 
-The backend will start on port `50051`.
+If you want, you can compile `protoc` from source instead.  To do this
+follow the instructions in [the top-level
+README](https://github.com/protocolbuffers/protobuf/blob/main/src/README.md).
 
-#### 2. Start the Envoy Proxy
+Once you have `protoc` compiled, you can run the tests provided along with our
+project to examine whether it can run successfully. In order to do this, you
+should download the Protocol Buffer source code from the release page with the
+link above. Then extract the source code and navigate to the folder named `js`
+containing a `package.json` file and a series of test files. In this folder, you
+can run the commands below to run the tests automatically.
 
-You can use Docker to run the Envoy proxy:
+    $ npm install
+    $ PROTOC_INC=/usr/include/google/protobuf npm test
 
-```bash
-cd proxy
-docker build -t menu-proxy .
-docker run -p 8080:8080 -p 9901:9901 --add-host=host.docker.internal:host-gateway menu-proxy
-```
+`PROTOC_INC` specifies the protobuf include path. By default, we use `protoc`
+located from `PATH`. Optionally, you can use the `PROTOC` enviroment variable to
+specify an alternative `protoc`.
 
-Alternatively, install and run Envoy locally with the provided `envoy.yaml` configuration.
+This will run two separate copies of the tests: one that uses
+Closure Compiler style imports and one that uses CommonJS imports.
+You can see all the CommonJS files in `commonjs_out/`.
+If all of these tests pass, you know you have a working setup.
 
-#### 3. Start the Frontend
 
-```bash
-cd frontend
-npm install --legacy-peer-deps
-npm start
-```
+Using Protocol Buffers in your own project
+==========================================
 
-The frontend will start on port `3000`.
+To use Protocol Buffers in your own project, you need to integrate
+the Protocol Compiler into your build system.  The details are a
+little different depending on whether you are using Closure imports
+or CommonJS imports:
 
-## API Documentation
+Closure Imports
+---------------
 
-The gRPC API is defined in `/proto/menu.proto`. Key services include:
+If you want to use Closure imports, your build should run a command
+like this:
 
-### Public RPCs
-- `GetFullMenu`: Retrieves complete menu with restaurant info and all categories with dishes
+    $ protoc --js_out=library=myproto_libs,binary:. messages.proto base.proto
 
-### Admin RPCs
-- **Restaurant**: `GetRestaurantInfo`, `UpdateRestaurantInfo`
-- **Categories**: `CreateCategory`, `ListCategories`, `UpdateCategory`, `DeleteCategory`
-- **Dishes**: `CreateDish`, `ListDishesByCategory`, `UpdateDish`, `DeleteDish`
+For Closure imports, `protoc` will generate a single output file
+(`myproto_libs.js` in this example).  The generated file will `goog.provide()`
+all of the types defined in your .proto files.  For example, for the unit
+tests the generated files contain many `goog.provide` statements like:
 
-## Database
+    goog.provide('proto.google.protobuf.DescriptorProto');
+    goog.provide('proto.google.protobuf.DescriptorProto.ExtensionRange');
+    goog.provide('proto.google.protobuf.DescriptorProto.ReservedRange');
+    goog.provide('proto.google.protobuf.EnumDescriptorProto');
+    goog.provide('proto.google.protobuf.EnumOptions');
 
-The application uses SQLite with the following models:
+The generated code will also `goog.require()` many types in the core library,
+and they will require many types in the Google Closure library.  So make sure
+that your `goog.provide()` / `goog.require()` setup can find all of your
+generated code, the core library `.js` files in this directory, and the
+Google Closure library itself.
 
-- **Restaurant**: Store restaurant information (name, address, phone)
-- **Category**: Menu categories with ordering
-- **Dish**: Individual menu items linked to categories
+Once you've done this, you should be able to import your types with
+statements like:
 
-The database is automatically initialized with sample data on first run.
+    goog.require('proto.my.package.MyMessage');
 
-## Development
+    var message = proto.my.package.MyMessage();
 
-### Regenerating Protobuf Code
+If unfamiliar with Closure or its compiler, consider reviewing
+[Closure documentation](https://developers.google.com/closure/library).
 
-After modifying `.proto` files:
+CommonJS imports
+----------------
 
-**For Go:**
-```bash
-protoc --go_out=backend --go-grpc_out=backend \
-  --go_opt=paths=source_relative \
-  --go-grpc_opt=paths=source_relative \
-  proto/menu.proto
-```
+If you want to use CommonJS imports, your build should run a command
+like this:
 
-**For TypeScript:**
-```bash
-protoc -I=proto proto/menu.proto \
-  --plugin=protoc-gen-grpc-web=frontend/node_modules/.bin/protoc-gen-grpc-web \
-  --grpc-web_out=import_style=typescript,mode=grpcwebtext:frontend/src/proto
+    $ protoc --js_out=import_style=commonjs,binary:. messages.proto base.proto
 
-pbjs -t static-module -w commonjs -o frontend/src/proto/menu_pb.js proto/menu.proto
-```
+For CommonJS imports, `protoc` will spit out one file per input file
+(so `messages_pb.js` and `base_pb.js` in this example).  The generated
+code will depend on the core runtime, which should be in a file called
+`google-protobuf.js`.  If you are installing from `npm`, this file should
+already be built and available.  If you are running from GitHub, you need
+to build it first by running:
 
-## License
+    $ gulp dist
 
-This project is open source and available under the MIT License.
+Once you've done this, you should be able to import your types with
+statements like:
+
+    var messages = require('./messages_pb');
+
+    var message = new messages.MyMessage();
+
+The `--js_out` flag
+-------------------
+
+The syntax of the `--js_out` flag is:
+
+    --js_out=[OPTIONS:]output_dir
+
+Where `OPTIONS` are separated by commas.  Options are either `opt=val` or
+just `opt` (for options that don't take a value).  The available options
+are specified and documented in the `GeneratorOptions` struct in
+[src/google/protobuf/compiler/js/js_generator.h](https://github.com/protocolbuffers/protobuf/blob/main/src/google/protobuf/compiler/js/js_generator.h#L53).
+
+Some examples:
+
+- `--js_out=library=myprotos_lib.js,binary:.`: this contains the options
+  `library=myprotos.lib.js` and `binary` and outputs to the current directory.
+  The `import_style` option is left to the default, which is `closure`.
+- `--js_out=import_style=commonjs,binary:protos`: this contains the options
+  `import_style=commonjs` and `binary` and outputs to the directory `protos`.
+  `import_style=commonjs_strict` doesn't expose the output on the global scope.
+
+API
+===
+
+The API is not well-documented yet.  Here is a quick example to give you an
+idea of how the library generally works:
+
+    var message = new MyMessage();
+
+    message.setName("John Doe");
+    message.setAge(25);
+    message.setPhoneNumbers(["800-555-1212", "800-555-0000"]);
+
+    // Serializes to a UInt8Array.
+    var bytes = message.serializeBinary();
+
+    var message2 = MyMessage.deserializeBinary(bytes);
+
+For more examples, see the tests.  You can also look at the generated code
+to see what methods are defined for your generated messages.
