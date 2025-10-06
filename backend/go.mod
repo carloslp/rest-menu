@@ -1,6 +1,6 @@
 module restaurant-menu
 
-go 1.24.7
+go 1.23
 
 require (
 	google.golang.org/grpc v1.75.1
