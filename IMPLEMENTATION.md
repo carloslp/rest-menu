@@ -39,7 +39,7 @@ This document provides a summary of the complete implementation.
 ### Technologies Used
 
 **Backend:**
-- Go 1.24
+- Go 1.23
 - gRPC 1.75
 - GORM 1.31 (ORM)
 - SQLite (Database)
