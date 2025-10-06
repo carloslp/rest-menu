@@ -174,3 +174,4 @@ This document provides a summary of the complete implementation.
 - The application uses gRPC-Web in "text" mode for better browser compatibility
 - All timestamps use GORM's built-in soft delete functionality
 - Environment-specific configurations can be adjusted in docker-compose.yml
+- **CapRover deployment**: See [CAPROVER.md](./CAPROVER.md) for CapRover deployment instructions

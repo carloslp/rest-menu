@@ -1,0 +1,72 @@
+# Multi-stage build for CapRover deployment
+# This Dockerfile builds and runs all three services (backend, proxy, frontend)
+
+# Stage 1: Build backend
+FROM golang:1.23-alpine AS backend-builder
+WORKDIR /app/backend
+# Install build dependencies for CGO (required for SQLite)
+RUN apk update && apk add --no-cache ca-certificates gcc musl-dev sqlite-dev
+COPY backend/go.mod backend/go.sum ./
+RUN go mod download
+COPY backend/ ./
+RUN CGO_ENABLED=1 GOOS=linux go build -a -installsuffix cgo -o server .
+
+# Stage 2: Build frontend  
+FROM node:20-alpine AS frontend-builder
+WORKDIR /app/frontend
+COPY frontend/package*.json ./
+RUN npm ci
+COPY frontend/ ./
+RUN npm run build
+
+# Stage 3: Final image with all services
+FROM envoyproxy/envoy:v1.28-latest
+
+# Switch to root to install packages
+USER root
+
+# Install necessary runtime dependencies (including sqlite for the backend)
+RUN apt-get update && apt-get install -y \
+    ca-certificates \
+    nginx \
+    supervisor \
+    curl \
+    sqlite3 \
+    libsqlite3-0 \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Create necessary directories
+RUN mkdir -p /app/backend /var/log/supervisor /etc/nginx/sites-available /etc/nginx/sites-enabled
+
+# Copy backend binary and ensure it has the correct permissions
+COPY --from=backend-builder /app/backend/server ./backend/server
+RUN chmod +x ./backend/server
+
+# Copy frontend build to nginx directory
+COPY --from=frontend-builder /app/frontend/build /usr/share/nginx/html
+
+# Copy Envoy configuration (CapRover-specific - uses localhost instead of service names)
+COPY proxy/envoy.caprover.yaml /etc/envoy/envoy.yaml
+
+# Copy nginx configuration for CapRover
+COPY nginx.caprover.conf /etc/nginx/sites-available/default
+RUN ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default && \
+    rm -f /etc/nginx/sites-enabled/default.conf
+
+# Copy supervisord configuration
+COPY supervisord.caprover.conf /etc/supervisor/conf.d/supervisord.conf
+
+# Ensure proper permissions
+RUN chmod 644 /etc/supervisor/conf.d/supervisord.conf
+
+# Expose port 80 for CapRover
+EXPOSE 80
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+  CMD curl -f http://localhost/ || exit 1
+
+# Start all services using supervisord
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
